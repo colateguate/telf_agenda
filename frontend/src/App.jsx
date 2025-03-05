@@ -10,7 +10,7 @@ const App = () => {
   const [search, setSearch] = useState('')
   const [showForm, setShowForm] = useState(false)
 
-
+console.log("TEST GIT")
   useEffect(() => {
     personsAPI.getAll()
       .then(response => {
