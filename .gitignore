@@ -1,0 +1,15 @@
+# Ignorar archivos sensibles y dependencias
+node_modules/
+.env
+
+# Ignorar archivos de logs
+npm-debug.log
+yarn-error.log
+
+# Ignorar archivos de compilación en frontend
+frontend/node_modules/
+frontend/build/
+
+# Ignorar archivos de configuración del editor (opcional)
+.vscode/
+.DS_Store
