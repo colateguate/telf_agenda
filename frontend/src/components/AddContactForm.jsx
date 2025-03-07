@@ -1,7 +1,7 @@
 import {useState} from 'react'
 import personsAPI from '../services/persons'
 
-const AddContactForm = ({allContacts, setAllContacts}) => {
+const AddContactForm = ({allContacts, setAllContacts, setNotification}) => {
     const [newName, setNewName] = useState('')
     const [newNumber, setNewNumber] = useState('')
 
@@ -25,8 +25,14 @@ const AddContactForm = ({allContacts, setAllContacts}) => {
                         setNewName('')
                         setNewNumber('')
                         setAllContacts(allContacts.map(contact => contact.id !== updatedPerson.id ? contact : response))
+                        setNotification({ message: `Updated contact: ${newName}`, type: 'info' })
                     })
-                    .catch(error => console.log(error))
+                    .catch(error => {
+                        setNotification({ 
+                            message: error.response?.data?.error || 'Error updating contact', 
+                            type: 'error' 
+                        })
+                    })
             }
         }else{
             const newContact = {
@@ -40,8 +46,14 @@ const AddContactForm = ({allContacts, setAllContacts}) => {
                     setNewName('')
                     setNewNumber('')
                     setAllContacts(allContacts.concat(response))
+                    setNotification({ message: `Added new contact: ${newName}`, type: 'success' })
                 })
-                .catch(error => console.log(error))
+                .catch(error => {
+                    setNotification({ 
+                        message: error.response?.data?.error || 'Error creating new contact', 
+                        type: 'error' 
+                    })
+                })
         }
     }
 

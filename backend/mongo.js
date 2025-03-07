@@ -4,10 +4,7 @@
 require('dotenv').config()
 const mongoose = require('mongoose')
 
-const MONGO_PASS = process.env.MONGO_DB_PASS
-
-const url =
-`mongodb+srv://gongoraicar:${MONGO_PASS}@telfagenda.jwj6i.mongodb.net/telfAgenda?retryWrites=true&w=majority&appName=telfAgenda`
+const url = process.env.MONGO_DB_URI
 
 mongoose.set('strictQuery',false)
 

@@ -1,39 +1,13 @@
+require('dotenv').config()
+const mongoose = require('mongoose')
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 
+
 const app = express();
 
-let persons = [
-  {
-    "name": "Elna Góngora",
-    "number": "39-44-5323523",
-    "id": 2
-  },
-  {
-    "name": "Sau Góngora",
-    "number": "12-43-234345",
-    "id": 3
-  },
-  {
-    "name": "Ícar Góngora",
-    "number": "39-23-6423122",
-    "id": 4
-  },
-  {
-    "id": 756,
-    "name": "Cristina Flores",
-    "number": "43242-64865-5456"
-  }
-]
-
-const requestLogger = (request, response, next) => {
-  console.log('Method:', request.method)
-  console.log('Path:', request.path)
-  console.log('Body:', request.body)
-  console.log('---')
-  next()
-}
+const Contact = require('./models/contact')
 
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
@@ -41,7 +15,6 @@ const unknownEndpoint = (request, response) => {
 
 app.use(cors());
 app.use(express.json());
-//app.use(requestLogger);
 app.use(morgan('tiny'));
 
 
@@ -52,34 +25,31 @@ app.listen(PORT, () => {
 
 
 
-app.get('/info', (request, response) => {
-  const date = new Date()
-  response.send(`<p>Phonebook has info for ${persons.length} people</p><p>${date}</p>`)
-})
 
+// ----------------- GET ALL CONTACTS -----------------
 app.get('/api/persons', (request, response) => {
-  response.json(persons)
+  Contact.find({}).then(result => {
+          response.json(result)
+    })
 })
 
-app.get('/api/persons/:id', (request, response) => {
-  const person_id = Number(request.params.id)
-  const person = persons.find(person => person.id === person_id)
 
-  if(person){
-    response.json(person)
-  } else {
-    response.status(404).end()
-  }
+
+// ----------------- GET SINGLE CONTACT -----------------
+app.get('/api/persons/:id', (request, response, next) => {
+  const contact_id = request.params.id
+  
+  Contact.findById(contact_id)
+    .then(contact => {
+      response.json(contact)
+    })
+    .catch(error => next(error))
+  
 })
 
-app.delete('/api/persons/:id', (request, response) => {
-  const person_id = Number(request.params.id)
-  persons = persons.filter(person => person.id !== person_id)
 
-  response.status(204).end()
-})
-
-app.post('/api/persons', (request, response) => {
+// ----------------- ADD NEW CONTACT -----------------
+app.post('/api/persons', (request, response, next) => {
   const body = request.body
 
   if(!body.name || !body.number){
@@ -88,39 +58,75 @@ app.post('/api/persons', (request, response) => {
     })
   }
 
-  if(persons.find(person => person.name === body.name)){
-    return response.status(400).json({
-      error: 'name must be unique'
-    })
-  }
+  const new_contact = new Contact({
+    name: body.name,
+    number: body.number
+  })
 
-  const new_person = {
-    id: Math.floor(Math.random() * 100000),
+  new_contact.save()
+    .then(savedContact => {
+      response.json(savedContact)
+    })
+    .catch(error => next(error))
+})
+
+
+
+
+// ----------------- UPDATE CONTACT -----------------
+app.put('/api/persons/:id', (request, response, next) => {
+  const contactId = request.params.id
+  const body = request.body
+  
+  contact = {
     name: body.name,
     number: body.number
   }
 
-  persons = persons.concat(new_person)
-  response.json(new_person)
-})
-
-app.put('/api/persons/:id', (request, response) => {
-  const contactId = Number(request.params.id)
-  const body = request.body
-  const contactToUpdate = persons.find(person => person.id === contactId)
-
-  console.log(contactId, contactToUpdate)
-  if(!contactToUpdate){
-    return response.status(404).json({
-      error: 'contact not found'
-    })
+  const options = {
+    new: true,
+    runValidators: true,
+    context: 'query'
   }
 
-  const updatedContact = {...contactToUpdate, number: body.number, name: body.name}
 
-  persons = persons.map(person => person.id !== contactId ? person : updatedContact)
-  response.json(updatedContact)
-
+  Contact.findByIdAndUpdate(contactId, contact, options)
+    .then(updatedContact => {
+      response.json(updatedContact)
+    })
+    .catch(error => {
+      next(error)
+    })
 })
 
+
+
+// ----------------- DELETE CONTACT -----------------
+app.delete('/api/persons/:id', (request, response, next) => {
+  Contact.findByIdAndDelete(request.params.id)
+    .then(result => {
+        response.status(204).end()
+    })
+    .catch(error => next(error))
+})
+
+
+
+
+// ----------------- ERROR HANDLING -----------------
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if(error.name === 'CastError'){
+    return response.status(400).send({error: 'malformatted id'})
+  }else if(error.name === 'ValidationError'){
+    return response.status(400).json({error: error.message})
+  }
+
+  
+  next(error)
+}
+
+app.use(errorHandler)
 app.use(unknownEndpoint)
