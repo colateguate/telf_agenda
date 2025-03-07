@@ -49,7 +49,7 @@ app.get('/api/persons/:id', (request, response, next) => {
 
 
 // ----------------- ADD NEW CONTACT -----------------
-app.post('/api/persons', (request, response, next) => {
+app.post('/api/persons', async (request, response, next) => {
   const body = request.body
 
   if(!body.name || !body.number){
@@ -63,18 +63,19 @@ app.post('/api/persons', (request, response, next) => {
     number: body.number
   })
 
-  new_contact.save()
-    .then(savedContact => {
-      response.json(savedContact)
-    })
-    .catch(error => next(error))
+  try{
+    const savedContact = await new_contact.save()
+    response.json(savedContact)
+  }catch(error){
+    next(error)
+  }
 })
 
 
 
 
 // ----------------- UPDATE CONTACT -----------------
-app.put('/api/persons/:id', (request, response, next) => {
+app.put('/api/persons/:id', async (request, response, next) => {
   const contactId = request.params.id
   const body = request.body
   
@@ -89,25 +90,25 @@ app.put('/api/persons/:id', (request, response, next) => {
     context: 'query'
   }
 
-
-  Contact.findByIdAndUpdate(contactId, contact, options)
-    .then(updatedContact => {
-      response.json(updatedContact)
-    })
-    .catch(error => {
-      next(error)
-    })
+  try{
+    const updatedContact = await Contact.findByIdAndUpdate(contactId, contact, options)
+    response.json(updatedContact)
+  }catch(error){
+    next(error)
+  }
 })
 
 
 
 // ----------------- DELETE CONTACT -----------------
-app.delete('/api/persons/:id', (request, response, next) => {
-  Contact.findByIdAndDelete(request.params.id)
-    .then(result => {
-        response.status(204).end()
-    })
-    .catch(error => next(error))
+app.delete('/api/persons/:id', async (request, response, next) => {
+  
+  try{
+    deletedUser = await findByIdAndDelete(request.params.id)
+    response.status(204).end()
+  }catch(error){
+    next(error)
+  }
 })
 
 
